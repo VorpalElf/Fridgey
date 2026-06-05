@@ -20,6 +20,12 @@ struct HomeView: View {
         }
         .toolbar {
             Button {
+                navViewModel.navigate(to: .settings)
+            } label: {
+                Image(systemName: "gear")
+            }
+            
+            Button {
                 Task {
                     (alertMsg, showAlert) = await authViewModel.SignOut()
                     if showAlert == false {

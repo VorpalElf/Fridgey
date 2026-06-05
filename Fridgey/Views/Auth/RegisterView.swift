@@ -75,8 +75,6 @@ struct RegisterView: View {
                     (alertMsg, isRegistered) = await authViewModel.register(firstName: firstName, lastName: lastName, email: email, password: password)
                     if isRegistered == true {
                         alertTitle = "Success"
-                        showAlert = true
-                        navViewModel.backToRoot()
                     }
                     showAlert = true
                 }
@@ -91,8 +89,14 @@ struct RegisterView: View {
             .frame(width: 180)
         }
         .padding()
-        .alert(isPresented: $showAlert) {
-            Alert(title: Text(alertTitle), message: Text(alertMsg), dismissButton: .default(Text("OK")))
+        .alert(alertTitle, isPresented: $showAlert) {
+            Button("OK") {
+                if alertTitle == "Success" {
+                    navViewModel.backToRoot()
+                }
+            }
+        } message: {
+            Text(alertMsg)
         }
     }
 }

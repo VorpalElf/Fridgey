@@ -11,12 +11,14 @@ import SwiftUI
 // Define routes available
 enum AppRoute: Hashable {
     case register
-    case signIn
     case home
+    case settings
+    case profile
+    case integration
 }
 
 class NavigationViewModel: ObservableObject {
-    @Published var path = NavigationPath()
+    @Published var path: [AppRoute] = []
     
     func navigate (to route: AppRoute) {
         path.append(route)
