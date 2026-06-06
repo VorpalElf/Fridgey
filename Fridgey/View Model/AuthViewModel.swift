@@ -13,6 +13,7 @@ import GoogleSignIn
 import GoogleSignInSwift
 
 class AuthViewModel: ObservableObject {
+    private let oAuthService = OAuthService.shared
     let db = Firestore.firestore()
     
     // MARK: Basic Authentication
@@ -62,15 +63,17 @@ class AuthViewModel: ObservableObject {
         return ("Registered successfully", true)
     }
     
+    // Sign In on Firebase
     func SignIn(email: String, password: String) async -> (alertMsg: String, showAlert: Bool) {
         do {
-            try await Auth.auth().signIn(withEmail: email, password: password)
+            try await Auth.auth().signIn(withEmail: email, password: password)      // Sign In function for Firebase
             return ("", false)
             } catch {
             return (error.localizedDescription, true)
         }
     }
     
+    // Sign Out on Firebase
     func SignOut() async -> (alertMsg: String, showAlert: Bool) {
         do {
             try Auth.auth().signOut()
@@ -80,96 +83,8 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    // MARK: OAuth SSO
-    enum AuthenticationError: Error {
-      case tokenError(message: String)
-    }
-    
-    enum authenticationState {
-        case authenticating
-        case authenticated
-    }
-    
-    func authGoogle() async -> (alertMsg: String, AuthCredential?) {
-        guard let clientID = FirebaseApp.app()?.options.clientID else {
-            fatalError("No client ID found in Firebase Configuration")
-        }
-        
-        let config = GIDConfiguration(clientID: clientID)
-        GIDSignIn.sharedInstance.configuration = config
-        
-        // Show Google SSO Window
-        guard let windowScene = await UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = await windowScene.windows.first,
-              let rootViewController = await window.rootViewController else {
-            return ("There is no root view controller", nil)
-        }
-        
-        do {
-            let userAuthentication = try await GIDSignIn.sharedInstance.signIn( withPresenting: rootViewController)
-            
-            // Invoke ID Token
-            let user = userAuthentication.user
-            guard let idToken = user.idToken else {
-                throw AuthenticationError.tokenError(message: "ID token missing")
-            }
-            let accessToken = user.accessToken
-            let credential = GoogleAuthProvider.credential(withIDToken: idToken.tokenString, accessToken: accessToken.tokenString)
-            return ("", credential)
-        } catch {
-            return (error.localizedDescription, nil)
-        }
-    }
-    
-    func signInWithGoogle(credential: AuthCredential) async -> (isVerified: Bool, alertMsg: String) {
-        do {
-            // Pass token to Firebase
-            let result = try await Auth.auth().signIn(with: credential)
-            let firebaseUser = result.user
-            print("User \(firebaseUser.uid) signed in wih email \(firebaseUser.email ?? "unknown")")
-            return (true, "")
-            
-        } catch {
-            return (false, error.localizedDescription)
-        }
-    }
-    
-    // MARK: Account Linking
-    enum AccountLinkMode {
-        case google
-    }
-    
-    func linkWithAccount(mode: AccountLinkMode) async -> (alertMsg: String, isVerified: Bool) {
-        var alertMsg = ""
-        var credential: AuthCredential? = nil
-
-        // 1. Fetch credential
-        switch mode {
-        case .google:
-            (alertMsg, credential) = await authGoogle()
-            guard credential != nil else {
-                return (alertMsg, false)
-            }
-        }
-        
-        // 2. Pass Credential
-        let user = Auth.auth().currentUser
-        do {
-            if let user {
-                let result = try await user.link(with: credential!)
-                return ("", true)
-            }
-        } catch {
-            return (error.localizedDescription, false)
-        }
-        
-        // TODO: 3. Might need to handle merge account
-        
-        
-        return ("", false)
-    }
-    
     // MARK: Fetch
+    // Fetch UID based on name
     func fetchUID(firstName: String, email: String) async -> String {
         let docRef = db.collection("Users")
         let query = docRef.whereField("email", isEqualTo: email)
@@ -186,9 +101,11 @@ class AuthViewModel: ObservableObject {
         return ""
     }
     
+    // Fetch name based on UID
     func fetchName(userID: String) async -> (firstName: String, lastName: String) {
         var uid: String = ""
         
+        // If no UID given, assume current user
         if userID.isEmpty {
             uid = Auth.auth().currentUser?.uid ?? "Unknown"
         } else {
@@ -219,6 +136,7 @@ class AuthViewModel: ObservableObject {
     func fetchEmail(userID: String) async -> String {
         var uid: String = ""
         
+        // If no UID given, assume current user
         if userID.isEmpty {
             uid = Auth.auth().currentUser?.uid ?? "Unknown"
         } else {
@@ -246,20 +164,38 @@ class AuthViewModel: ObservableObject {
     }
     
     // MARK: Account Update
+    // Function to allow user reset their password
+    func forgotPassword(email: String) async -> (hadError: Bool, alertMsg: String) {
+        guard email.contains("@") else {
+            return (true, "Invalid email. Please try again.")
+        }
+        do {
+            try await Auth.auth().sendPasswordReset(withEmail: email)
+            return (false, "If you've been registered using this address, an email has been sent. Please check your inbox or spam.")
+        } catch {
+            return (true, error.localizedDescription)
+        }
+    }
+    
     func updateAccount(firstName: String, lastName: String, email: String, password: String) async -> (alertMsg: String, hadError: Bool) {
         let (storedFirstName, storedLastName) = await fetchName(userID: "")
         let storedEmail = await fetchEmail(userID: "")
         let uid = (Auth.auth().currentUser?.uid)!
         
         do {
+            var updates: [String: Any] = [:]
+
             if firstName != storedFirstName {
-                let docRef = db.collection("Users").document(uid)
-                try await docRef.updateData(["firstName": firstName])
+                updates["firstName"] = firstName
             }
             if lastName != storedLastName {
-                let docRef = db.collection("Users").document(uid)
-                try await docRef.updateData(["lastName": lastName])
+                updates["lastName"] = lastName
             }
+
+            if !updates.isEmpty {
+                try await db.collection("Users").document(uid).updateData(updates)
+            }
+            
             if email != storedEmail {
                 try await Auth.auth().currentUser?.sendEmailVerification(beforeUpdatingEmail: email)
             }
@@ -271,7 +207,7 @@ class AuthViewModel: ObservableObject {
         }
         
         if email != storedEmail {
-            return ("Please check your inbox to verify your email", false)
+            return ("An verification email has been sent. Please check your inbox or spam.", false)
         }
         return ("Changes Applied", false)
     }

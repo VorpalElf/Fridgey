@@ -11,6 +11,7 @@ import SwiftUI
 // Define routes available
 enum AppRoute: Hashable {
     case register
+    case forgotPassword
     case home
     case settings
     case profile

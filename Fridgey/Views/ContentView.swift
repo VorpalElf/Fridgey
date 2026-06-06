@@ -12,6 +12,7 @@ import FirebaseAuth
 struct ContentView: View {
     @StateObject private var navViewModel = NavigationViewModel()
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var oAuthService = OAuthService()
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -21,6 +22,9 @@ struct ContentView: View {
     
     @State private var showAlert: Bool = false
     @State private var alertMsg: String = ""
+    
+    // Light or Dark Mode
+    @Environment(\.colorScheme) var colourScheme
     
     var body: some View {
         NavigationStack(path: $navViewModel.path){
@@ -65,7 +69,7 @@ struct ContentView: View {
                 
                 // TODO: Forgot Password
                 Button("Forgot Password") {
-                    
+                    navViewModel.navigate(to: .forgotPassword)
                 }
                 .padding(.top)
                 .padding(.horizontal)
@@ -75,6 +79,7 @@ struct ContentView: View {
                     Task {
                         (alertMsg, showAlert) = await authViewModel.SignIn(email: email, password: password)
                         if showAlert == false {
+                            (email, password) = ("" , "")
                             navViewModel.navigate(to: .home)
                         }
                     }
@@ -110,13 +115,13 @@ struct ContentView: View {
                 
                 Button {
                     Task {
-                        (alertMsg, credential) = await authViewModel.authGoogle()
+                        (alertMsg, credential) = await oAuthService.authGoogle()
                         if credential == nil {
                             showAlert = true
                             return
                         }
                         
-                        (isVerified, alertMsg) = await authViewModel.signInWithGoogle(credential: credential!)
+                        (isVerified, alertMsg) = await oAuthService.signInWithOAuth(credential: credential!)
                         if isVerified == false {
                             showAlert = true
                         } else {
@@ -134,8 +139,38 @@ struct ContentView: View {
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 30)
                 }
+                .padding(.horizontal)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                
+                Button {
+                    Task {
+                        (alertMsg, credential) = await oAuthService.authGitHub()
+                        if credential == nil {
+                            showAlert = true
+                            return
+                        }
+                        (isVerified, alertMsg) = await oAuthService.signInWithOAuth(credential: credential!)
+                        if isVerified == false {
+                            showAlert = true
+                        } else {
+                            navViewModel.navigate(to: .home)
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image (colourScheme == .dark ? "GitHub_Invertocat_White": "GitHub_Invertocat_Black")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 32)
+                        
+                        Text("Sign in with GitHub")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal)
                 .buttonStyle(.bordered)
                 .controlSize(.large)
             }
@@ -146,6 +181,8 @@ struct ContentView: View {
                 route in switch route {
                 case .register:
                     RegisterView()
+                case .forgotPassword:
+                    forgotPasswordView()
                 case .home:
                     HomeView()
                 case .settings:
