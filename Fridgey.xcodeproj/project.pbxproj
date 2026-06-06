@@ -15,6 +15,7 @@
 		E763B5102FCF36B20084221E /* OpenFoodFactsSDK in Frameworks */ = {isa = PBXBuildFile; productRef = E763B50F2FCF36B20084221E /* OpenFoodFactsSDK */; };
 		E763B5FD2FCF7F200084221E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = E763B5FC2FCF7F200084221E /* GoogleSignIn */; };
 		E763B5FF2FCF7F200084221E /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = E763B5FE2FCF7F200084221E /* GoogleSignInSwift */; };
+		E7F4AB1D2FD4C7E8006873D0 /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = E7F4AB1C2FD4C7E8006873D0 /* FirebaseAILogic */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7F4AB1D2FD4C7E8006873D0 /* FirebaseAILogic in Frameworks */,
 				E7546BDE2FCF0D0F0059BB9A /* FirebaseAnalytics in Frameworks */,
 				E7546BE22FCF0D0F0059BB9A /* FirebaseCore in Frameworks */,
 				E7546BE42FCF0D0F0059BB9A /* FirebaseDatabase in Frameworks */,
@@ -113,6 +115,7 @@
 				E763B50F2FCF36B20084221E /* OpenFoodFactsSDK */,
 				E763B5FC2FCF7F200084221E /* GoogleSignIn */,
 				E763B5FE2FCF7F200084221E /* GoogleSignInSwift */,
+				E7F4AB1C2FD4C7E8006873D0 /* FirebaseAILogic */,
 			);
 			productName = Fridgey;
 			productReference = E7546BCC2FCF0A9B0059BB9A /* Fridgey.app */;
@@ -449,6 +452,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E763B5FB2FCF7F200084221E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		E7F4AB1C2FD4C7E8006873D0 /* FirebaseAILogic */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E7546BDC2FCF0D0F0059BB9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAILogic;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
