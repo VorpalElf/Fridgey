@@ -67,7 +67,6 @@ struct ContentView: View {
                         .focused($isFocused)
                 }
                 
-                // TODO: Forgot Password
                 Button("Forgot Password") {
                     navViewModel.navigate(to: .forgotPassword)
                 }

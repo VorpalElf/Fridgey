@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E716CC8B2FD72AD70034609B /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E716CC8A2FD72AD70034609B /* Auth */; };
+		E716CC8D2FD72AD70034609B /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E716CC8C2FD72AD70034609B /* Storage */; };
+		E716CCD12FD771DE0034609B /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E716CCD02FD771DE0034609B /* Supabase */; };
 		E7546BDE2FCF0D0F0059BB9A /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = E7546BDD2FCF0D0F0059BB9A /* FirebaseAnalytics */; };
 		E7546BE02FCF0D0F0059BB9A /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = E7546BDF2FCF0D0F0059BB9A /* FirebaseAuth */; };
 		E7546BE22FCF0D0F0059BB9A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = E7546BE12FCF0D0F0059BB9A /* FirebaseCore */; };
@@ -50,12 +53,15 @@
 			files = (
 				E7F4AB1D2FD4C7E8006873D0 /* FirebaseAILogic in Frameworks */,
 				E7546BDE2FCF0D0F0059BB9A /* FirebaseAnalytics in Frameworks */,
+				E716CC8D2FD72AD70034609B /* Storage in Frameworks */,
 				E7546BE22FCF0D0F0059BB9A /* FirebaseCore in Frameworks */,
 				E7546BE42FCF0D0F0059BB9A /* FirebaseDatabase in Frameworks */,
 				E763B5FF2FCF7F200084221E /* GoogleSignInSwift in Frameworks */,
 				E7546BE62FCF0D0F0059BB9A /* FirebaseFirestore in Frameworks */,
 				E7546BE02FCF0D0F0059BB9A /* FirebaseAuth in Frameworks */,
+				E716CCD12FD771DE0034609B /* Supabase in Frameworks */,
 				E763B5102FCF36B20084221E /* OpenFoodFactsSDK in Frameworks */,
+				E716CC8B2FD72AD70034609B /* Auth in Frameworks */,
 				E763B5FD2FCF7F200084221E /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -116,6 +122,9 @@
 				E763B5FC2FCF7F200084221E /* GoogleSignIn */,
 				E763B5FE2FCF7F200084221E /* GoogleSignInSwift */,
 				E7F4AB1C2FD4C7E8006873D0 /* FirebaseAILogic */,
+				E716CC8A2FD72AD70034609B /* Auth */,
+				E716CC8C2FD72AD70034609B /* Storage */,
+				E716CCD02FD771DE0034609B /* Supabase */,
 			);
 			productName = Fridgey;
 			productReference = E7546BCC2FCF0A9B0059BB9A /* Fridgey.app */;
@@ -149,6 +158,7 @@
 				E7546BDC2FCF0D0F0059BB9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				E763B50E2FCF36B20084221E /* XCRemoteSwiftPackageReference "openfoodfacts-swift" */,
 				E763B5FB2FCF7F200084221E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				E716CC892FD72AD70034609B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E7546BCD2FCF0A9B0059BB9A /* Products */;
@@ -313,6 +323,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Fridgey/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -343,6 +354,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Fridgey/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.food-and-drink";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -386,6 +398,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E716CC892FD72AD70034609B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
 		E7546BDC2FCF0D0F0059BB9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -413,6 +433,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E716CC8A2FD72AD70034609B /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E716CC892FD72AD70034609B /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		E716CC8C2FD72AD70034609B /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E716CC892FD72AD70034609B /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		E716CCD02FD771DE0034609B /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E716CC892FD72AD70034609B /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
 		E7546BDD2FCF0D0F0059BB9A /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E7546BDC2FCF0D0F0059BB9A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

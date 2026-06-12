@@ -68,29 +68,49 @@ class OAuthService: ObservableObject {
             let firebaseUser = result.user
             print("User \(firebaseUser.uid) signed in wih email \(firebaseUser.email ?? "unknown")")
             
+            // Send token to Supabase
+            let tokenString = try await firebaseUser.getIDToken(forcingRefresh: true)
+            guard !tokenString.isEmpty else {
+                return (false, "Authentication token could not be generated.")
+            }
+            
             // Fetch name
-            let fullName = Auth.auth().currentUser?.displayName ?? "User"
+            let fullName = firebaseUser.displayName ?? "User"
             var firstName: String = ""
             var lastName: String = ""
             
-            let nameComponents = fullName.split(separator: " ")
+            if let profileData = result.additionalUserInfo?.profile {
+                        firstName = profileData["given_name"] as? String ?? profileData["first_name"] as? String ?? ""
+                        lastName = profileData["family_name"] as? String ?? profileData["last_name"] as? String ?? ""
+                    }
             
-            if nameComponents.count > 1 {
-                // Convert Substring to String and handle potential nil with ??
-                firstName = String(nameComponents.first ?? "")
-                lastName = String(nameComponents.last ?? "")
-            } else {
-                firstName = fullName
-                lastName = ""
+            if firstName.isEmpty && lastName.isEmpty {
+                let fullName = firebaseUser.displayName ?? "User"
+                let nameComponents = fullName.split(separator: " ")
+                
+                if nameComponents.count > 1 {
+                    // Convert Substring to String and handle potential nil with ??
+                    firstName = String(nameComponents.first ?? "")
+                    lastName = String(nameComponents.last ?? "")
+                } else {
+                    firstName = fullName
+                    lastName = ""
+                }
             }
             
             // Upload name
-            let email = Auth.auth().currentUser?.email
+            let email = Auth.auth().currentUser?.email ?? "no-email@fridgey.com"
+            let uid = Auth.auth().currentUser!.uid
+            try await SupaManager.shared.supabase
+                .from("users")
+                .upsert(AuthViewModel.Profile(userID: uid, firstName: firstName, lastName: lastName, email: email))
+                .execute()
+            /*
             let docRef = db.collection("Users").document(Auth.auth().currentUser!.uid)
             try await docRef.setData(["firstName": firstName,
                                       "lastName": lastName,
                                       "email": email!])
-            
+            */
             return (true, "")
             
         } catch {
@@ -99,17 +119,17 @@ class OAuthService: ObservableObject {
     }
     
     // Fetch auth credentials from GitHub
-        func authGitHub() async -> (alertMsg: String, credential: AuthCredential?) {
-            let provider = OAuthProvider(providerID: "github.com")
-            
-            do {
-                // Modern Firebase natively supports async/await here
-                let credential = try await provider.credential(with: nil)
-                return ("", credential)
-            } catch {
-                return (error.localizedDescription, nil)
-            }
+    func authGitHub() async -> (alertMsg: String, credential: AuthCredential?) {
+        let provider = OAuthProvider(providerID: "github.com")
+        
+        do {
+            // Modern Firebase natively supports async/await here
+            let credential = try await provider.credential(with: nil)
+            return ("", credential)
+        } catch {
+            return (error.localizedDescription, nil)
         }
+    }
     
     // MARK: Account Linking
     enum AccountLinkMode {
@@ -143,11 +163,47 @@ class OAuthService: ObservableObject {
         } catch {
             return (error.localizedDescription, false)
         }
-        
-        // TODO: 3. Might need to handle merge account
-        
-        
         return ("", false)
     }
 
+    // Function to unlink OAuth methods
+    func unLinkAccount(mode: AccountLinkMode) async -> String {
+        do {
+            switch mode {
+            case .google:
+                try await Auth.auth().currentUser?.unlink(fromProvider: "google.com")
+            case .github:
+                try await Auth.auth().currentUser?.unlink(fromProvider: "github.com")
+            }
+            return ""
+        } catch {
+            return error.localizedDescription
+        }
+    }
+    
+    func linkWithEmail(email: String, password: String) async -> String {
+        let user = Auth.auth().currentUser
+        let hasPassword = user!.providerData.contains { userInfo in
+            return userInfo.providerID == "password"
+        }
+        if hasPassword {
+            return ("You already have an email-password account.")
+        }
+        
+        // Validation Check
+        if password.count < 6 {
+            return ("Password must be at least 6 characters long")
+        }
+        if !password.contains(/[0-9]/) || !password.contains(/[^a-zA-Z0-9]/) {
+            return ("Password should include numbers and special characters")
+        }
+        
+        do {
+            let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+            try await user!.link(with: credential)
+            return ("Email-password linked successfully!")
+        } catch {
+            return (error.localizedDescription)
+        }
+    }
 }

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
 struct ProfileView: View {
     @StateObject private var authViewModel = AuthViewModel()
@@ -25,6 +27,10 @@ struct ProfileView: View {
     @State private var alertMsg: String = ""
     @State private var hadError: Bool = false
     @FocusState private var isFocused: Bool
+    
+    @State private var showSignOutButton: Bool = false
+    @State private var showSignWarning: Bool = false
+    @State private var emailChanged: Bool = false
     
     var body: some View {
         VStack {
@@ -68,7 +74,6 @@ struct ProfileView: View {
                 .textContentType(.username)
                 .autocapitalization(.none)
             
-            
                 .padding()
                 .background(Color(.systemGray6))
                 .cornerRadius(8)
@@ -94,29 +99,61 @@ struct ProfileView: View {
             
             Button {
                 Task {
-                    (alertMsg, hadError) = await authViewModel.updateAccount(firstName: firstName, lastName: lastName, email: email, password: password)
-                    
-                    if hadError {
-                        alertTitle = "Error"
+                    let storedEmail = await authViewModel.fetchEmail(userID: "")
+                    let user = Auth.auth().currentUser
+                    if storedEmail != email {
+                        let hasPassword = user?.providerData.contains { userInfo in
+                            return userInfo.providerID == "password"
+                        } ?? false
+                        if !hasPassword {
+                            alertMsg = "Email cannot be changed without a email-password account. Please link your email-password account and try again."
+                            showAlert = true
+                            return
+                        }
+                        alertMsg = "For safety reasons, your Google account will be disconnected. Are you sure to proceed?"
+                        showSignWarning = true
                     } else {
-                        alertTitle = "Success"
+                        await performAccountUpdate()
                     }
-                    
-                    showAlert = true
                 }
             } label: {
                 Text("Apply Changes")
                     .padding(10)
                     .padding(.horizontal, 13)
-                    .background((firstName != storedFirstName || lastName != storedLastName || email != storedEmail || !password.isEmpty) ? Color.green : Color.gray)
+                    .background((firstName == storedFirstName && lastName == storedLastName && email == storedEmail && password.isEmpty) ? Color.gray : Color.green)
                     .foregroundColor(.white)
                     .font(.title2)
                     .fontWeight(.bold)
                     .cornerRadius(8)
                     .frame(width: 330)
             }
-            .disabled((firstName == storedFirstName && lastName == storedLastName && email == storedEmail && password.isEmpty))
+            
+            Button {
+                Task {
+                    alertMsg = await OAuthService.shared.linkWithEmail(email: email, password: password)
+                    if alertMsg == "Email-password linked successfully!" {
+                        alertTitle = "Success"
+                    } else {
+                        alertTitle = "Error"
+                    }
+                    showAlert = true
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "lock.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 32)
+                    Text("Link to Email-Password")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
             }
+            .padding(.horizontal)
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled((email == storedEmail && password.isEmpty))
+        }
         .padding()
         .onAppear() {
             Task {
@@ -125,15 +162,65 @@ struct ProfileView: View {
                 (storedFirstName, storedLastName, storedEmail) = (firstName, lastName, email)
             }
         }
+        .navigationBarBackButtonHidden(showSignOutButton)
         .alert(alertTitle, isPresented: $showAlert) {
             Button ("OK") {
-                if alertTitle == "Success" {
+                if alertTitle == "Success" && !showSignOutButton {
                     navViewModel.pop()
                 }
             }
         } message: {
             Text(alertMsg)
         }
+        .alert("Warning", isPresented: $showSignWarning) {
+            Button("Yes", role: .destructive) {
+                Task {
+                    alertMsg = await OAuthService.shared.unLinkAccount(mode: .google)
+                    try? await Task.sleep(for: .seconds(0.5))
+                    print(alertMsg)
+                    if alertMsg != "" && alertMsg != "User was not linked to an account with the given provider." {
+                        alertTitle = "Error"
+                        showAlert = true
+                    } else {
+                        await performAccountUpdate()
+                    }
+                }
+            }
+            Button("No", role: .cancel) {
+                
+            }
+        } message: {
+            Text(alertMsg)
+        }
+        .toolbar {
+            if showSignOutButton {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Sign Out") {
+                        Task {
+                            (alertMsg, showAlert) = await authViewModel.SignOut()
+                            if !showAlert {
+                                navViewModel.backToRoot()
+                            }
+                        }
+                    }
+                    .foregroundStyle(Color(.red))
+                }
+            }
+        }
+    }
+    private func performAccountUpdate() async {
+        (alertMsg, hadError) = await authViewModel.updateAccount(firstName: firstName, lastName: lastName, email: email, password: password)
+        
+        if hadError {
+            alertTitle = "Error"
+        } else {
+            if storedEmail != email{
+                showSignOutButton = true
+                emailChanged = true
+            }
+            alertTitle = "Success"
+        }
+        showAlert = true
     }
 }
 
